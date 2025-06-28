@@ -1,4 +1,4 @@
-using CityExplorer;
+﻿using CityExplorer;
 using Domain.InterFaces;
 using Infrastructure;
 using Infrastructure.Implementions;
@@ -55,6 +55,17 @@ app.UseCors("AllowAll");
 app.UseAuthorization();
 
 app.UseStaticFiles();
+
+
+
+// بعد از var app = builder.Build();
+using (var scope = app.Services.CreateScope())
+{
+    var ctx = scope.ServiceProvider.GetRequiredService<Context>();
+    ctx.Database.Migrate();
+}
+
+
 
 app.MapControllers();
 
