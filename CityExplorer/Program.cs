@@ -22,7 +22,7 @@ builder.Services.AddScoped<IPlaceCategoryRepository, PlaceCategoryRepository>();
 
 #endregion
 
-builder.Services.AddDbContext<Context>(options=>
+builder.Services.AddDbContext<Context>(options =>
 options.UseSqlite(builder.Configuration.GetConnectionString("connectionstring"))
 );
 
@@ -46,9 +46,9 @@ if (app.Environment.IsDevelopment())
     //app.MapOpenApi();
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.UseHttpsRedirection();
 }
 
-app.UseHttpsRedirection();
 
 app.UseCors("AllowAll");
 
