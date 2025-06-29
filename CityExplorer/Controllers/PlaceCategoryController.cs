@@ -17,7 +17,7 @@ namespace CityExplorer.Controllers
     {
 
 
-        [HttpGet("[action]")]
+        [HttpGet("GetAllPlaceCetegory")]
         public async Task<IActionResult> GetAllPlaceCetegory()
         {
             var category = await _placeCategory.GetAll();
