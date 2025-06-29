@@ -2,15 +2,18 @@
 using AutoMapper;
 using Domain.Entities;
 using Domain.InterFaces;
+using Infrastructure;
 using Infrastructure.Implementions;
+using Infrastructure.Seeding;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace CityExplorer.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class PlaceCategoryController(IPlaceCategoryRepository _placeCategory, IMapper mapper) : ControllerBase
+    public class PlaceCategoryController(IPlaceCategoryRepository _placeCategory, IMapper mapper,Context _dbContext) : ControllerBase
     {
 
 
@@ -27,6 +30,17 @@ namespace CityExplorer.Controllers
                 Data = categorydto
             });
 
+        }
+
+        [HttpPost("seed")]
+        public async Task<IActionResult> SeedPlaceCategories()
+        {
+            await SeedData.SeedPlaceCategoriesAsync(_dbContext);
+            return Ok(new ApiResponse<string>
+            {
+                Issuccess = true,
+                Data = "Place categories seeded successfully."
+            });
         }
 
     }
