@@ -1,4 +1,5 @@
 ﻿using Application.DTOs;
+using Application.Services.Admin;
 using AutoMapper;
 using Domain.Entities;
 using Domain.InterFaces;
@@ -8,18 +9,13 @@ namespace CityExplorer.Controllers.Admin
 {
     [Route("api/admin/[controller]")]
     [ApiController]
-    public class PlacesController : ControllerBase
+    public class PlacesController(PlaceService _placeService) : ControllerBase
     {
 
-        IPlaceRepository _placeRepository;
 
-        IMapper _mapper;
+ 
 
-        public PlacesController(IPlaceRepository placeRepository, IMapper mapper)
-        {
-            _placeRepository = placeRepository;
-            _mapper = mapper;
-        }
+       
 
         [HttpPost("[action]")]
         public async Task<IActionResult> AddNewPlace([FromForm] CreationPlaceDTO creationPlaceDTO)
@@ -33,55 +29,20 @@ namespace CityExplorer.Controllers.Admin
                     Data = creationPlaceDTO
                 });
             }
-            var place = _mapper.Map<Place>(creationPlaceDTO);
 
-            var uniqueFileName = Guid.NewGuid().ToString() + Path.GetExtension(creationPlaceDTO.PlaceImage.FileName);
+            var result = await _placeService.AddNewPlace(creationPlaceDTO);
 
-            place.ImageName = uniqueFileName;
-            place.Status = 0;
-            if (await _placeRepository.Insert(place))
-            {
-                // مسیر ذخیره
-                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Images");
-
-                // اطمینان از وجود پوشه
-                if (!Directory.Exists(uploadsFolder))
-                {
-                    Directory.CreateDirectory(uploadsFolder);
-                }
-
-                // مسیر ذخیره سازی عکس
-                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                // ذخیره فایل
-                using (var fileStream = new FileStream(filePath, FileMode.Create))
-                {
-                    await creationPlaceDTO.PlaceImage.CopyToAsync(fileStream);
-                }
-
-            }
-
-
-            return Ok(new ApiResponse<object>
-            {
-                Issuccess = true,
-                Message = "مکان مورد نظر با موفقیت افزوده شد"
-            });
+            return Ok(result);
         }
 
 
         [HttpGet("[action]")]
         public async Task<IActionResult> GetAllPlaces()
         {
-            var places = await _placeRepository.GetPlacesForAdmin();
 
-            var placesdto = _mapper.Map<List<PlaceDTO>>(places);
+            var result = await _placeService.GetAllPlaces();
 
-            return Ok(new ApiResponse<List<PlaceDTO>>
-            {
-                Issuccess = true,
-                Data = placesdto
-            });
+            return Ok(result);
 
 
         }
@@ -100,16 +61,10 @@ namespace CityExplorer.Controllers.Admin
                 });
             }
 
-            var newplace = _mapper.Map<Place>(Place);
 
-            await _placeRepository.Update(newplace);
+            var result = await _placeService.UpdatePlace(Place);
 
-            return Ok(new ApiResponse<PlaceDTO>
-            {
-                Issuccess = true,
-                Data = Place,
-                Message = "مکان مورد نظر با موفقیت به روز رسانی شد"
-            });
+            return Ok(result);
 
         }
 
@@ -121,94 +76,36 @@ namespace CityExplorer.Controllers.Admin
         public async Task<IActionResult> DeletePlace(int id)
         {
 
-            var place = await _placeRepository.GetById(id);
+            var result = await _placeService.DeletePlace(id);
 
-            if (place == null)
+            if (!result.Issuccess)
             {
-                return NotFound(new ApiResponse<object>
-                {
+                if (result.Message!.Contains("یافت نشد") || result.Message.Contains("وجود ندارد"))
+                    return NotFound(result);
 
-                    Issuccess = false,
-                    Message = "مکان مورد نظر وجود ندارد"
-                });
+                return BadRequest(result); // برای سایر خطاها مثل حذف‌نشدن از DB یا خطای حذف عکس
             }
 
-
-            if (await _placeRepository.DeleteById(id))
-            {
-                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Images", place.ImageName);
-
-                if (!System.IO.File.Exists(filePath))
-
-                    return NotFound(new ApiResponse<object>
-                    {
-                        Issuccess = false,
-                        Message = "مکان دیدنی با موفقیت حذف شد اما عکسی برای پاک کردن یافت نشد"
-                    });
-
-                try
-                {
-                    System.IO.File.Delete(filePath);
-                    return Ok(new ApiResponse<object>
-                    {
-                        Issuccess = true,
-                        Message = "مکان با موفقیت حذف شد"
-                    });
-                }
-                catch (Exception ex)
-                {
-
-                    return BadRequest(new ApiResponse<object>
-                    {
-                        Issuccess = false,
-                        Message = "مکان حذف گردید اما عکس ان حذف نشد",
-                        Errors = ex.ToString()
-                    });
-                }
-            }
-            else
-            {
-                return BadRequest(new ApiResponse<object>
-                {
-                    Issuccess = false,
-                    Message = "مکان دیدنی حذف نشد"
-                });
-            }
+            return Ok(result);
 
         }
 
         [HttpPut("[action]/{id:int}/{status}")]
-        public async Task<IActionResult> DetermineStatuse(int id, string status)
+        public async Task<IActionResult> DetermineStatus(int id, string status)
         {
-            var place = await _placeRepository.GetById(id);
+            var result = await _placeService.SetPlaceStatusAsync(id, status);
 
-            var response = new ApiResponse<object>();
-
-            if (place == null)
+            if (!result.Issuccess)
             {
-                return NotFound(new ApiResponse<object>
+                if (result.Message!.Contains("وجود ندارد"))
                 {
-                    Issuccess = false,
-                    Message = "مکانی با این مشخصات وجود ندارد"
-                });
+
+                    return NotFound(result);
+                }
+                return BadRequest(result);
             }
 
-            if (status == "تاییدشده")
-            {
-                place.Status = 0;
-                await _placeRepository.Update(place);
-                response.Issuccess = true;
-                response.Message = "مکان مورد نظر تایید شد";
-            }
-            else
-            {
-                place.Status = (Domain.enums.PlaceStatus)2;
-                await _placeRepository.Update(place);
-                response.Issuccess = true;
-                response.Message = "مکان مورد نظر رد شد";
-            }
-
-            return Ok(response);
+            return Ok(result);
         }
 
 
