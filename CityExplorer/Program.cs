@@ -1,4 +1,5 @@
-﻿using Application.Services.Admin;
+﻿using Application.Services;
+using Application.Services.Admin;
 using CityExplorer;
 using Domain.InterFaces;
 using Infrastructure;
@@ -19,7 +20,9 @@ builder.Services.AddScoped(typeof(IBaseRepository<,>), typeof(BaseRepository<,>)
 builder.Services.AddScoped<IPlaceRepository, PlaceRepository>();
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddScoped<IPlaceCategoryRepository, PlaceCategoryRepository>();
-builder.Services.AddScoped<PlaceService>();
+builder.Services.AddScoped<Application.Services.PlaceService>();
+builder.Services.AddScoped<Application.Services.Admin.PlaceService>();
+builder.Services.AddScoped<PlaceCategoryService>();
 
 #endregion
 

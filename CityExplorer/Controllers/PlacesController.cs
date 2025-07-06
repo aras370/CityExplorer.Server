@@ -1,4 +1,5 @@
 ﻿using Application.DTOs;
+using Application.Services;
 using AutoMapper;
 using Domain.Entities;
 using Domain.InterFaces;
@@ -10,26 +11,17 @@ namespace CityExplorer.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class PlacesController : ControllerBase
+    public class PlacesController(PlaceService _placeService) : ControllerBase
     {
 
-        IPlaceRepository _placeRepository;
-        IMapper _mapper;
-       
-
-        public PlacesController(IPlaceRepository placeRepository, IMapper mapper,IPlaceCategoryRepository placeCategoryRepository)
-        {
-            _placeRepository = placeRepository;
-            _mapper = mapper;
-        }
-
+     
 
         [HttpGet("[action]/{id}")]
         public async Task<IActionResult> GetPlaceById(int id)
         {
-            var place = await _placeRepository.GetPlaceById(id);
+           var result = await _placeService.GetPlaceById(id);
 
-            if (place == null)
+            if (result.Data == null)
             {
                 return NotFound(new ApiResponse<object>
                 {
@@ -38,12 +30,8 @@ namespace CityExplorer.Controllers
                 });
             }
 
-            var placedto = _mapper.Map<PlaceDetailDTO>(place);
-            return Ok(new ApiResponse<PlaceDetailDTO>
-            {
-                Issuccess = true,
-                Data = placedto
-            });
+          
+            return Ok(result);
 
         }
 
@@ -51,31 +39,20 @@ namespace CityExplorer.Controllers
         public async Task<IActionResult> GetMostPopularPlaces()
         {
 
-            var places=await _placeRepository.MostPopularPlaces();
+            var result=await _placeService.GetMostPopularPlaces();
 
-            var placedto=_mapper.Map<List<PlaceDTO>>(places);
 
-            return Ok(new ApiResponse<List< PlaceDTO>>
-            {
-                Data = placedto,
-                Issuccess = true
-            });
+            return Ok(result);
 
         }
 
         [HttpGet("[action]")]
         public async Task<IActionResult> GetPlacesForUsers()
         {
-            var places=await _placeRepository.GetPlacesForUsers();
+           var result= await _placeService.GetPlacesForUsers();
 
-            var placesdto = _mapper.Map<List<PlacesListForUsersDTO>>(places);
 
-            return Ok(new ApiResponse<List<PlacesListForUsersDTO>>
-            {
-                Data = placesdto,
-                Issuccess=true
-            });
-
+            return Ok(result);
         }
 
         [HttpPost("[action]")]
@@ -92,41 +69,10 @@ namespace CityExplorer.Controllers
                 });
             }
 
-            var place=_mapper.Map<Place>(placedto);
-            
-            var uniqueFileName = Guid.NewGuid().ToString() + Path.GetExtension(placedto.PlaceImage.FileName);
+        
+            var result=await _placeService.CreatePlaceByUser(placedto);
 
-            place.ImageName = uniqueFileName;
-
-            place.Status = (Domain.enums.PlaceStatus)1;
-
-            if (await _placeRepository.Insert(place))
-            {
-                // مسیر ذخیره
-                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Images");
-
-                // اطمینان از وجود پوشه
-                if (!Directory.Exists(uploadsFolder))
-                {
-                    Directory.CreateDirectory(uploadsFolder);
-                }
-
-                // مسیر ذخیره سازی عکس
-                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                // ذخیره فایل
-                using (var fileStream = new FileStream(filePath, FileMode.Create))
-                {
-                    await placedto.PlaceImage.CopyToAsync(fileStream);
-                }
-
-            }
-
-            return Ok(new ApiResponse<object>
-            {
-                Issuccess = true,
-                Message = "اطلاعات با موفقیت ارسال گردید،پس از تایید در سایت نمایش داده میشود"
-            });
+            return Ok(result);
 
         }
      

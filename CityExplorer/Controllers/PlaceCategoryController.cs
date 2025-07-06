@@ -1,34 +1,26 @@
 ﻿using Application.DTOs;
+using Application.Services;
 using AutoMapper;
-using Domain.Entities;
 using Domain.InterFaces;
 using Infrastructure;
-using Infrastructure.Implementions;
 using Infrastructure.Seeding;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace CityExplorer.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class PlaceCategoryController(IPlaceCategoryRepository _placeCategory, IMapper mapper,Context _dbContext) : ControllerBase
+    public class PlaceCategoryController(Context _dbContext, PlaceCategoryService _placecategoryservice) : ControllerBase
     {
 
 
         [HttpGet("GetAllPlaceCetegory")]
         public async Task<IActionResult> GetAllPlaceCetegory()
         {
-            var category = await _placeCategory.GetAll();
+            
+            var result=await _placecategoryservice.GetAllCetegories();
 
-            var categorydto = mapper.Map<List<PlaceCategoryDTO>>(category);
-
-            return Ok(new ApiResponse<List<PlaceCategoryDTO>>
-            {
-                Issuccess = true,
-                Data = categorydto
-            });
+            return Ok(result);
 
         }
 

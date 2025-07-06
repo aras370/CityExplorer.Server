@@ -1,8 +1,5 @@
 ﻿using Application.DTOs;
 using Application.Services.Admin;
-using AutoMapper;
-using Domain.Entities;
-using Domain.InterFaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CityExplorer.Controllers.Admin
@@ -12,10 +9,6 @@ namespace CityExplorer.Controllers.Admin
     public class PlacesController(PlaceService _placeService) : ControllerBase
     {
 
-
- 
-
-       
 
         [HttpPost("[action]")]
         public async Task<IActionResult> AddNewPlace([FromForm] CreationPlaceDTO creationPlaceDTO)
